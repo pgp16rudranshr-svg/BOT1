@@ -34,7 +34,7 @@ AFFILIATION = os.getenv("AFFILIATION", "IIM Rohtak (Finance & Tech)")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 AI_PROVIDER = os.getenv("AI_PROVIDER", "gemini")  # 'gemini', 'openai', or 'heuristic'
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
 # Email SMTP configuration
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")

@@ -1,0 +1,44 @@
+{
+  "sources": [
+    {
+      "name": "Hugging Face Blog",
+      "category": "AI Research & Releases",
+      "url": "https://huggingface.co/blog/feed.xml"
+    },
+    {
+      "name": "MIT Technology Review - AI",
+      "category": "AI Impact & Analysis",
+      "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed"
+    },
+    {
+      "name": "TechCrunch - Artificial Intelligence",
+      "category": "Tech & Venture Capital",
+      "url": "https://techcrunch.com/category/artificial-intelligence/feed/"
+    },
+    {
+      "name": "VentureBeat - AI",
+      "category": "Enterprise AI & Strategy",
+      "url": "https://venturebeat.com/category/ai/feed/"
+    },
+    {
+      "name": "Ars Technica - Information Technology",
+      "category": "Global Tech Developments",
+      "url": "https://feeds.arstechnica.com/arstechnica/index"
+    },
+    {
+      "name": "The Verge - Tech",
+      "category": "Consumer Tech & AI",
+      "url": "https://www.theverge.com/rss/index.xml"
+    },
+    {
+      "name": "CNBC - Technology",
+      "category": "Tech & Financial Markets",
+      "url": "https://www.cnbc.com/id/19854910/device/rss/rss.html"
+    },
+    {
+      "name": "Hacker News - Top AI",
+      "category": "Developer & Community Trends",
+      "url": "https://hnrss.org/frontpage?points=100&q=AI+OR+LLM+OR+GPT+OR+model"
+    }
+  ]
+}

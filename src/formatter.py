@@ -32,15 +32,24 @@ def render_html_fallback(context: Dict[str, Any], template_content: str) -> str:
     bt_items = context.get("breakthroughs", [])
     bt_html = ""
     for item in bt_items:
+        s_url = item.get('source_url', '#')
         bt_html += f"""
         <div class="card">
           <span class="meta-tag">{item.get('lab', '')}</span>
           <h3 class="card-title">
-            <a href="{item.get('source_url', '#')}" target="_blank">{item.get('title', '')} &rarr;</a>
+            <a href="{s_url}" target="_blank" style="color: #0f172a; text-decoration: none;">{item.get('title', '')} &rarr;</a>
           </h3>
           <p class="card-body"><strong>In Plain English:</strong> {item.get('plain_english', '')}</p>
           <div class="highlight-box">
             <strong>📈 Market Angle:</strong> {item.get('market_impact', '')}
+          </div>
+          <div style="margin-top: 12px; text-align: left;">
+            <a href="{s_url}" target="_blank" style="display: inline-block; background-color: #f1f5f9; color: #0284c7; text-decoration: none; padding: 6px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; font-size: 12px;">
+              🔗 Read Full Story / Report &rarr;
+            </a>
+            <div style="margin-top: 4px; font-size: 11px; color: #64748b;">
+              Direct Link: <a href="{s_url}" target="_blank" style="color: #0284c7; word-break: break-all;">{s_url}</a>
+            </div>
           </div>
         </div>
         """
@@ -54,10 +63,17 @@ def render_html_fallback(context: Dict[str, Any], template_content: str) -> str:
     qb_items = context.get("quick_bites", [])
     qb_html = ""
     for bite in qb_items:
+        if isinstance(bite, dict):
+            text = bite.get("text", "")
+            src_name = f" &mdash; <em>{bite.get('source_name', '')}</em>" if bite.get("source_name") else ""
+            src_url = f'<br/><a href="{bite.get("source_url", "#")}" target="_blank" style="color: #0284c7; font-weight: 600; font-size: 12px; text-decoration: underline;">Read story &rarr;</a>' if bite.get("source_url") else ""
+            content_str = f"{text}{src_name}{src_url}"
+        else:
+            content_str = str(bite)
         qb_html += f"""
         <li class="quick-bites-item">
           <span class="quick-bites-bullet">&bull;</span>
-          <div>{bite}</div>
+          <div>{content_str}</div>
         </li>
         """
     html = re.sub(r"\{% for bite in quick_bites %\}.*?\{% endfor %\}", qb_html, html, flags=re.DOTALL)
@@ -125,7 +141,12 @@ def render_briefing(briefing_data: Dict[str, Any]) -> Dict[str, str]:
         "⚡ FAST SIGNAL & MARKET BITES:"
     ])
     for q in context["quick_bites"]:
-        text_lines.append(f"• {q}")
+        if isinstance(q, dict):
+            text_lines.append(f"• {q.get('text', '')}")
+            if q.get("source_url"):
+                text_lines.append(f"  Link: {q.get('source_url')}")
+        else:
+            text_lines.append(f"• {q}")
 
     text_lines.extend([
         "",

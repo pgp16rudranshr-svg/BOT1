@@ -28,6 +28,35 @@ def render_html_fallback(context: Dict[str, Any], template_content: str) -> str:
     html = html.replace("{{ concept_of_the_day.plain_english_definition }}", concept.get("plain_english_definition", ""))
     html = html.replace("{{ concept_of_the_day.business_analogy }}", concept.get("business_analogy", ""))
 
+    # Business & Markets replacement
+    bm_items = context.get("business_and_markets", [])
+    bm_html = ""
+    for item in bm_items:
+        s_url = item.get('source_url', '#')
+        bm_html += f"""
+        <div class="card" style="border-left: 4px solid #059669;">
+          <span class="meta-tag" style="background: #d1fae5; color: #047857;">{item.get('publisher', 'Market Report')}</span>
+          <h3 class="card-title">
+            <a href="{s_url}" target="_blank" style="color: #0f172a; text-decoration: none;">{item.get('title', '')} &rarr;</a>
+          </h3>
+          <p class="card-body">{item.get('plain_english', '')}</p>
+          <div class="highlight-box" style="background: #ecfdf5; border-left-color: #059669; color: #065f46;">
+            <strong>📊 Strategic & Valuation Angle:</strong> {item.get('financial_takeaway', '')}
+          </div>
+          <div style="margin-top: 12px; text-align: left;">
+            <a href="{s_url}" target="_blank" style="display: inline-block; background-color: #f0fdf4; color: #047857; text-decoration: none; padding: 6px 14px; border: 1px solid #a7f3d0; border-radius: 6px; font-weight: 600; font-size: 12px;">
+              📰 Read Full Coverage &rarr;
+            </a>
+            <div style="margin-top: 4px; font-size: 11px; color: #64748b;">
+              Direct Link: <a href="{s_url}" target="_blank" style="color: #047857; word-break: break-all;">{s_url}</a>
+            </div>
+          </div>
+        </div>
+        """
+    import re
+    html = html.replace("{% if business_and_markets %}", "")
+    html = re.sub(r"\{% for item in business_and_markets %\}.*?\{% endfor %\}", bm_html, html, flags=re.DOTALL)
+
     # Breakthroughs block replacement
     bt_items = context.get("breakthroughs", [])
     bt_html = ""
@@ -92,6 +121,7 @@ def render_briefing(briefing_data: Dict[str, Any]) -> Dict[str, str]:
         "recipient_name": settings.RECIPIENT_NAME,
         "affiliation": settings.AFFILIATION,
         "top_story": briefing_data.get("top_story", {}),
+        "business_and_markets": briefing_data.get("business_and_markets", []),
         "breakthroughs": briefing_data.get("breakthroughs", []),
         "concept_of_the_day": briefing_data.get("concept_of_the_day", {}),
         "quick_bites": briefing_data.get("quick_bites", [])
@@ -122,9 +152,22 @@ def render_briefing(briefing_data: Dict[str, Any]) -> Dict[str, str]:
         f"{top.get('what_happened', '')}",
         f"Finance & Business Impact: {top.get('why_it_matters', '')}",
         f"Source: {top.get('source_url', '')}",
-        "",
-        "🚀 FRONTIER MODELS & RELEASES:",
     ]
+
+    if context["business_and_markets"]:
+        text_lines.append("")
+        text_lines.append("💼 TECH FINANCE, ENTERPRISE & MARKETS:")
+        for bm in context["business_and_markets"]:
+            text_lines.append(f"- [{bm.get('publisher', '')}] {bm.get('title', '')}")
+            text_lines.append(f"  Summary: {bm.get('plain_english', '')}")
+            text_lines.append(f"  Financial Angle: {bm.get('financial_takeaway', '')}")
+            text_lines.append(f"  Link: {bm.get('source_url', '')}")
+            text_lines.append("")
+
+    text_lines.extend([
+        "",
+        "🚀 FRONTIER MODELS & RELEASES:"
+    ])
     for b in context["breakthroughs"]:
         text_lines.append(f"- [{b.get('lab', '')}] {b.get('title', '')}")
         text_lines.append(f"  In Plain English: {b.get('plain_english', '')}")

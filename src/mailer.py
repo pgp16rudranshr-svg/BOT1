@@ -56,7 +56,9 @@ def send_email(subject: str, html_content: str, text_content: str, recipient: Op
             server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20)
             server.starttls()
 
-        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+        clean_user = settings.SMTP_USER.strip()
+        clean_password = settings.SMTP_PASSWORD.replace(" ", "").strip()
+        server.login(clean_user, clean_password)
         server.sendmail(from_email, [to_email], msg.as_string())
         server.quit()
         logger.info(f"Briefing email successfully delivered to {to_email}!")

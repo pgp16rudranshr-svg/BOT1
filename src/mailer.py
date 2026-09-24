@@ -20,16 +20,16 @@ def preview_in_browser(html_path: str):
 def send_email(subject: str, html_content: str, text_content: str, recipient: Optional[str] = None) -> bool:
     """
     Sends the newsletter via SMTP (e.g., Gmail App Password).
-    Falls back gracefully with clear instructions if credentials are not configured.
+    Supports multiple recipients (comma or semicolon separated).
     """
-    to_email = recipient or settings.RECIPIENT_EMAIL
+    raw_recipients = recipient or settings.RECIPIENT_EMAIL
     from_email = settings.EMAIL_FROM or settings.SMTP_USER
 
-    if not to_email or not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+    if not raw_recipients or not settings.SMTP_USER or not settings.SMTP_PASSWORD:
         logger.warning("Email credentials not fully set in .env. Skipping actual SMTP dispatch.")
         print("\n" + "=" * 60)
         print("📧 [EMAIL NOTICE]")
-        print(f"Recipient Email : {to_email or 'Not configured'}")
+        print(f"Recipient Email : {raw_recipients or 'Not configured'}")
         print(f"SMTP User       : {settings.SMTP_USER or 'Not configured'}")
         print("To receive daily briefings via email:")
         print("1. Set RECIPIENT_EMAIL=your_email@domain.com in your .env file")
@@ -37,34 +37,45 @@ def send_email(subject: str, html_content: str, text_content: str, recipient: Op
         print("=" * 60 + "\n")
         return False
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"Tech & AI Daily <{from_email}>"
-    msg["To"] = to_email
-
-    # Attach plain text and HTML parts (HTML takes precedence in clients that support it)
-    part_text = MIMEText(text_content, "plain", "utf-8")
-    part_html = MIMEText(html_content, "html", "utf-8")
-    msg.attach(part_text)
-    msg.attach(part_html)
+    recipients = [r.strip() for r in raw_recipients.replace(";", ",").split(",") if r.strip()]
 
     try:
         logger.info(f"Connecting to SMTP server {settings.SMTP_HOST}:{settings.SMTP_PORT}...")
         if settings.SMTP_PORT == 465:
-            server = smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20)
+            server = smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=25)
         else:
-            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20)
+            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=25)
             server.starttls()
 
         clean_user = settings.SMTP_USER.strip()
         clean_password = settings.SMTP_PASSWORD.replace(" ", "").strip()
         server.login(clean_user, clean_password)
-        server.sendmail(from_email, [to_email], msg.as_string())
+
+        success_count = 0
+        for rec in recipients:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"Tech & AI Daily <{from_email}>"
+            msg["To"] = rec
+
+            part_text = MIMEText(text_content, "plain", "utf-8")
+            part_html = MIMEText(html_content, "html", "utf-8")
+            msg.attach(part_text)
+            msg.attach(part_html)
+
+            try:
+                server.sendmail(from_email, [rec], msg.as_string())
+                logger.info(f"Briefing email successfully delivered to {rec}!")
+                print(f"✅ Briefing successfully sent to {rec}")
+                success_count += 1
+            except Exception as send_err:
+                logger.error(f"Failed to send email to {rec}: {send_err}")
+                print(f"❌ Failed to send to {rec}: {send_err}")
+
         server.quit()
-        logger.info(f"Briefing email successfully delivered to {to_email}!")
-        print(f"\n✅ Briefing successfully sent to {to_email}!")
-        return True
+        print(f"\n🎉 Successfully sent to {success_count}/{len(recipients)} recipients!\n")
+        return success_count > 0
     except Exception as e:
-        logger.error(f"Failed to send email: {e}")
-        print(f"\n❌ Error sending email: {e}")
+        logger.error(f"Failed to connect or authenticate with SMTP: {e}")
+        print(f"\n❌ Error with SMTP server: {e}")
         return False

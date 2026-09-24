@@ -242,11 +242,19 @@
     <div class="card card-top">
       <span class="meta-tag">TOP SIGNAL</span>
       <h2 class="card-title">
-        <a href="{{ top_story.source_url }}" target="_blank">{{ top_story.headline }} &rarr;</a>
+        <a href="{{ top_story.source_url }}" target="_blank" style="color: #0f172a; text-decoration: none;">{{ top_story.headline }} &rarr;</a>
       </h2>
       <p class="card-body">{{ top_story.what_happened }}</p>
       <div class="highlight-box">
         <strong>💼 Finance & Business Impact:</strong> {{ top_story.why_it_matters }}
+      </div>
+      <div style="margin-top: 14px; text-align: left;">
+        <a href="{{ top_story.source_url }}" target="_blank" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 13px;">
+          📖 Read Full Original Article &rarr;
+        </a>
+        <div style="margin-top: 6px; font-size: 11px; color: #64748b;">
+          Direct Link: <a href="{{ top_story.source_url }}" target="_blank" style="color: #0284c7; word-break: break-all;">{{ top_story.source_url }}</a>
+        </div>
       </div>
     </div>
 
@@ -257,11 +265,19 @@
     <div class="card">
       <span class="meta-tag">{{ item.lab }}</span>
       <h3 class="card-title">
-        <a href="{{ item.source_url }}" target="_blank">{{ item.title }} &rarr;</a>
+        <a href="{{ item.source_url }}" target="_blank" style="color: #0f172a; text-decoration: none;">{{ item.title }} &rarr;</a>
       </h3>
       <p class="card-body"><strong>In Plain English:</strong> {{ item.plain_english }}</p>
       <div class="highlight-box">
         <strong>📈 Market Angle:</strong> {{ item.market_impact }}
+      </div>
+      <div style="margin-top: 12px; text-align: left;">
+        <a href="{{ item.source_url }}" target="_blank" style="display: inline-block; background-color: #f1f5f9; color: #0284c7; text-decoration: none; padding: 6px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; font-size: 12px;">
+          🔗 Read Full Story / Report &rarr;
+        </a>
+        <div style="margin-top: 4px; font-size: 11px; color: #64748b;">
+          Direct Link: <a href="{{ item.source_url }}" target="_blank" style="color: #0284c7; word-break: break-all;">{{ item.source_url }}</a>
+        </div>
       </div>
     </div>
     {% endfor %}
@@ -287,7 +303,17 @@
         {% for bite in quick_bites %}
         <li class="quick-bites-item">
           <span class="quick-bites-bullet">&bull;</span>
-          <div>{{ bite }}</div>
+          <div>
+            {% if bite is mapping %}
+              {{ bite.text }}
+              {% if bite.source_name %}&mdash; <em>{{ bite.source_name }}</em>{% endif %}
+              {% if bite.source_url %}
+                <br/><a href="{{ bite.source_url }}" target="_blank" style="color: #0284c7; font-weight: 600; font-size: 12px; text-decoration: underline;">Read story &rarr;</a>
+              {% endif %}
+            {% else %}
+              {{ bite }}
+            {% endif %}
+          </div>
         </li>
         {% endfor %}
       </ul>

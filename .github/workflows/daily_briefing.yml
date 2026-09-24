@@ -1,0 +1,41 @@
+name: Daily Tech & AI Briefing
+
+on:
+  schedule:
+    # 4:30 AM UTC = 10:00 AM IST (Indian Standard Time)
+    - cron: '30 4 * * *'
+  # Allows manual triggering anytime from the GitHub website or mobile app
+  workflow_dispatch:
+
+jobs:
+  send-daily-briefing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run Daily Briefing Pipeline
+        env:
+          RECIPIENT_NAME: ${{ secrets.RECIPIENT_NAME || 'Rudransh Rastogi' }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          AFFILIATION: ${{ secrets.AFFILIATION || 'IIM Rohtak (Finance & Tech)' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '465' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: ${{ secrets.SMTP_USER }}
+        run: |
+          python run.py --now

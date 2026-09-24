@@ -15,11 +15,21 @@ Your mission is to filter through the noise of daily global tech news and delive
 Structure your analysis strictly into this JSON format:
 {
   "top_story": {
-    "headline": "Punchy headline of the single most consequential tech/AI story today",
+    "headline": "Punchy headline of the single most consequential tech/business story today",
+    "source_name": "Publisher Name",
     "what_happened": "2-3 clear, jargon-free sentences explaining the event.",
     "why_it_matters": "2 sentences on business, financial, or strategic impact (e.g. market valuation, enterprise adoption, competitive moat, capital expenditure).",
     "source_url": "EXACT URL link from the article provided below"
   },
+  "business_and_markets": [
+    {
+      "title": "Business / Venture / Market Story Title",
+      "publisher": "CNBC / TechCrunch / VentureBeat / Wired",
+      "plain_english": "What happened in simple terms regarding enterprise software, venture capital, acquisitions, or market dynamics.",
+      "financial_takeaway": "Commercial angle, revenue potential, cost of compute, or investor takeaway.",
+      "source_url": "EXACT URL link from the article provided below"
+    }
+  ],
   "breakthroughs": [
     {
       "title": "Model or Tech Release Name",
@@ -43,7 +53,7 @@ Structure your analysis strictly into this JSON format:
   ]
 }
 
-Ensure all explanations are crisp, highly readable, and free of overly dense academic jargon. Always include the exact source_url for every story so the reader can click to read the full source. Return ONLY the JSON object.
+Ensure all explanations are crisp, highly readable, and free of overly dense academic jargon. Feature a balanced mix of business/finance updates and AI tech models. Always include the exact source_url for every story so the reader can click to read the full source. Return ONLY the JSON object.
 """
 
 def synthesize_with_gemini(articles: List[Dict], api_key: str, model: str = "gemini-3.6-flash") -> Dict[str, Any]:
@@ -130,51 +140,124 @@ def synthesize_with_openai(articles: List[Dict], api_key: str) -> Dict[str, Any]
 def synthesize_fallback(articles: List[Dict]) -> Dict[str, Any]:
     """
     Intelligent heuristic fallback when no LLM API key is configured or offline.
-    Extracts top articles and constructs an executive summary.
+    Extracts top articles from diverse sources, segregating business/finance and model breakthroughs.
     """
-    logger.info("Using smart heuristic synthesis fallback.")
+    logger.info("Using smart heuristic synthesis fallback with diverse source curation.")
     if not articles:
         return {
             "top_story": {
-                "headline": "Global Tech & AI Ecosystem Update",
-                "what_happened": "Monitoring global sources for new AI model releases and market updates.",
+                "headline": "Global Tech & Business Intelligence Update",
+                "source_name": "Global Tech Network",
+                "what_happened": "Monitoring global sources for new AI model releases, enterprise cloud spend, and market updates.",
                 "why_it_matters": "Keeping track of technical shifts is vital for tech and finance strategy.",
-                "source_url": "https://huggingface.co"
+                "source_url": "https://cnbc.com"
             },
+            "business_and_markets": [],
             "breakthroughs": [],
             "concept_of_the_day": {
                 "term": "Foundation Models",
                 "plain_english_definition": "Large AI models trained on vast amounts of data that can be adapted to a wide range of downstream tasks.",
                 "business_analogy": "Like building a core engine platform in manufacturing that can power sedans, SUVs, and trucks."
             },
-            "quick_bites": ["Checking global feeds for updates."]
+            "quick_bites": []
         }
 
-    # Pick top story
+    # Identify business/market-centric sources vs pure AI/model research sources
+    biz_keywords = ['market', 'finance', 'venture', 'business', 'enterprise', 'cnbc', 'wired', 'siliconangle', 'cloud']
+    model_keywords = ['model', 'research', 'hugging', 'mit', 'verge', 'ars', 'paper', 'lab', 'deepmind', 'weights']
+
+    used_links = set()
+
+    # 1. Lead Story: First high-signal article
     top = articles[0]
-    breakthrough_articles = [a for a in articles[1:4]]
+    used_links.add(top['link'])
+
+    # 2. Business & Markets: Distinct sources matching business keywords
+    biz_candidates = [
+        a for a in articles 
+        if a['link'] not in used_links and any(k in a.get('category', '').lower() or k in a.get('source', '').lower() for k in biz_keywords)
+    ]
+    biz_selected = []
+    seen_biz_sources = set()
+    for a in biz_candidates:
+        if a['source'] not in seen_biz_sources:
+            biz_selected.append(a)
+            seen_biz_sources.add(a['source'])
+            used_links.add(a['link'])
+            if len(biz_selected) == 3:
+                break
+
+    # 3. Frontier Models & AI Releases: Distinct sources matching model/research keywords
+    model_candidates = [
+        a for a in articles 
+        if a['link'] not in used_links and any(k in a.get('category', '').lower() or k in a.get('source', '').lower() for k in model_keywords)
+    ]
+    model_selected = []
+    seen_model_sources = set()
+    for a in model_candidates:
+        if a['source'] not in seen_model_sources:
+            model_selected.append(a)
+            seen_model_sources.add(a['source'])
+            used_links.add(a['link'])
+            if len(model_selected) == 3:
+                break
+
+    # 4. Quick bites from remaining diverse sources
+    qb_selected = []
+    seen_qb_sources = set()
+    for a in articles:
+        if a['link'] not in used_links and a['source'] not in seen_qb_sources:
+            qb_selected.append(a)
+            seen_qb_sources.add(a['source'])
+            used_links.add(a['link'])
+            if len(qb_selected) == 4:
+                break
+
+    # Fallback fill if any list was short
+    for a in articles:
+        if a['link'] not in used_links:
+            if len(biz_selected) < 2:
+                biz_selected.append(a)
+                used_links.add(a['link'])
+            elif len(model_selected) < 2:
+                model_selected.append(a)
+                used_links.add(a['link'])
+            elif len(qb_selected) < 4:
+                qb_selected.append(a)
+                used_links.add(a['link'])
 
     return {
         "top_story": {
             "headline": top["title"],
-            "what_happened": top["summary"] if top["summary"] else "Significant developments reported across global tech networks.",
-            "why_it_matters": f"Published via {top['source']}. Tech advancements in this sector directly influence enterprise software spend and market positioning.",
+            "source_name": top["source"],
+            "what_happened": top["summary"] if top["summary"] else "Key strategic development reported across global tech networks.",
+            "why_it_matters": f"Published via {top['source']}. Tech advancements in this sector directly influence enterprise software spend, valuation multiples, and market positioning.",
             "source_url": top["link"]
         },
+        "business_and_markets": [
+            {
+                "title": a["title"],
+                "publisher": a["source"],
+                "plain_english": a["summary"][:240] + ("..." if len(a["summary"]) > 240 else ""),
+                "financial_takeaway": "Commercial angle: Influences IT budgets, cloud infrastructure ROI, and venture market funding trends.",
+                "source_url": a["link"]
+            }
+            for a in biz_selected
+        ],
         "breakthroughs": [
             {
                 "title": a["title"],
                 "lab": a["source"],
-                "plain_english": a["summary"][:200] + "...",
-                "market_impact": "Accelerates efficiency gains and alters competitive dynamics for enterprise tech adopters.",
+                "plain_english": a["summary"][:240] + ("..." if len(a["summary"]) > 240 else ""),
+                "market_impact": "Accelerates model inference efficiency and lowers compute barriers for enterprise software adopters.",
                 "source_url": a["link"]
             }
-            for a in breakthrough_articles
+            for a in model_selected
         ],
         "concept_of_the_day": {
             "term": "Inference Compute vs. Training Compute",
-            "plain_english_definition": "Training compute is the energy and cost spent teaching an AI model once. Inference compute is the continuous cost every time a user prompts the model to generate an answer.",
-            "business_analogy": "Training is R&D / Capex to design a car; Inference is the ongoing Opex (fuel and maintenance) every time you drive it."
+            "plain_english_definition": "Training compute is the fixed capital expenditure spent teaching an AI model once. Inference compute is the continuous operating expense every time a user or business queries the model.",
+            "business_analogy": "Training is the R&D/Capex needed to engineer a Boeing jet; Inference is the ongoing fuel and maintenance costs every time the airline flies a passenger."
         },
         "quick_bites": [
             {
@@ -182,7 +265,7 @@ def synthesize_fallback(articles: List[Dict]) -> Dict[str, Any]:
                 "source_name": a["source"],
                 "source_url": a["link"]
             }
-            for a in articles[4:8]
+            for a in qb_selected
         ]
     }
 

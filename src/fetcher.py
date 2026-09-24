@@ -120,7 +120,8 @@ def fetch_all_sources(config_path: Optional[Path] = None) -> List[Dict]:
     with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
 
-    all_articles: List[Dict] = []
+    # Collect unique items grouped by source
+    source_buckets: List[List[Dict]] = []
     seen_titles = set()
 
     for src in config.get("sources", []):
@@ -129,13 +130,28 @@ def fetch_all_sources(config_path: Optional[Path] = None) -> List[Dict]:
         category = src.get("category", "General Tech")
         logger.info(f"Fetching: {name} ({url})")
         items = fetch_feed(url, name, category)
+        unique_items = []
         for item in items:
-            norm_title = re.sub(r"[^a-zA-Z0-9]", "", item["title"].lower())
+            title = item.get("title", "").strip()
+            link = item.get("link", "").strip()
+            if not title or title.lower() == "untitled" or not link:
+                continue
+            norm_title = re.sub(r"[^a-zA-Z0-9]", "", title.lower())
             if norm_title and norm_title not in seen_titles:
                 seen_titles.add(norm_title)
-                all_articles.append(item)
+                unique_items.append(item)
+        if unique_items:
+            source_buckets.append(unique_items)
 
-    logger.info(f"Successfully collected {len(all_articles)} unique articles across sources.")
+    # Round-robin interleave across sources to guarantee rich diversity
+    all_articles: List[Dict] = []
+    max_len = max((len(b) for b in source_buckets), default=0)
+    for idx in range(max_len):
+        for bucket in source_buckets:
+            if idx < len(bucket):
+                all_articles.append(bucket[idx])
+
+    logger.info(f"Successfully collected {len(all_articles)} unique articles across {len(source_buckets)} diverse sources.")
     return all_articles
 
 if __name__ == "__main__":

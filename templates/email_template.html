@@ -258,6 +258,31 @@
       </div>
     </div>
 
+    <!-- Business, Finance & Enterprise Tech -->
+    {% if business_and_markets %}
+    <div class="section-title">💼 Tech Finance, Enterprise & Markets</div>
+    {% for item in business_and_markets %}
+    <div class="card" style="border-left: 4px solid #059669;">
+      <span class="meta-tag" style="background: #d1fae5; color: #047857;">{{ item.publisher }}</span>
+      <h3 class="card-title">
+        <a href="{{ item.source_url }}" target="_blank" style="color: #0f172a; text-decoration: none;">{{ item.title }} &rarr;</a>
+      </h3>
+      <p class="card-body">{{ item.plain_english }}</p>
+      <div class="highlight-box" style="background: #ecfdf5; border-left-color: #059669; color: #065f46;">
+        <strong>📊 Strategic & Valuation Angle:</strong> {{ item.financial_takeaway }}
+      </div>
+      <div style="margin-top: 12px; text-align: left;">
+        <a href="{{ item.source_url }}" target="_blank" style="display: inline-block; background-color: #f0fdf4; color: #047857; text-decoration: none; padding: 6px 14px; border: 1px solid #a7f3d0; border-radius: 6px; font-weight: 600; font-size: 12px;">
+          📰 Read Full Coverage &rarr;
+        </a>
+        <div style="margin-top: 4px; font-size: 11px; color: #64748b;">
+          Direct Link: <a href="{{ item.source_url }}" target="_blank" style="color: #047857; word-break: break-all;">{{ item.source_url }}</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
     <!-- AI Models & Breakthroughs -->
     {% if breakthroughs %}
     <div class="section-title">🚀 Frontier Models & Releases</div>

@@ -1,0 +1,17 @@
+# Environment variables (NEVER commit your passwords/keys!)
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+
+# macOS files
+.DS_Store
+
+# Briefings log/cache
+briefings/*.log

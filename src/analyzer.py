@@ -18,7 +18,7 @@ Structure your analysis strictly into this JSON format:
     "headline": "Punchy headline of the single most consequential tech/AI story today",
     "what_happened": "2-3 clear, jargon-free sentences explaining the event.",
     "why_it_matters": "2 sentences on business, financial, or strategic impact (e.g. market valuation, enterprise adoption, competitive moat, capital expenditure).",
-    "source_url": "URL link to the source article"
+    "source_url": "EXACT URL link from the article provided below"
   },
   "breakthroughs": [
     {
@@ -26,7 +26,7 @@ Structure your analysis strictly into this JSON format:
       "lab": "Company / Research Lab",
       "plain_english": "What this new AI model or tool does in simple words, and how it differs from previous versions.",
       "market_impact": "Commercial viability, cost-efficiency, or enterprise disruption angle.",
-      "source_url": "URL link to the source"
+      "source_url": "EXACT URL link from the article provided below"
     }
   ],
   "concept_of_the_day": {
@@ -35,17 +35,18 @@ Structure your analysis strictly into this JSON format:
     "business_analogy": "A relatable finance, business, or operational analogy."
   },
   "quick_bites": [
-    "Short 1-line update on venture funding, regulatory moves, or minor tech updates with (Source: Name)",
-    "Short 1-line update with (Source: Name)",
-    "Short 1-line update with (Source: Name)",
-    "Short 1-line update with (Source: Name)"
+    {
+      "text": "Short 1-line update on funding, regulatory moves, or tech updates",
+      "source_name": "Publisher Name",
+      "source_url": "EXACT URL link from the article provided below"
+    }
   ]
 }
 
-Ensure all explanations are crisp, highly readable, and free of overly dense academic jargon. Return ONLY the JSON object.
+Ensure all explanations are crisp, highly readable, and free of overly dense academic jargon. Always include the exact source_url for every story so the reader can click to read the full source. Return ONLY the JSON object.
 """
 
-def synthesize_with_gemini(articles: List[Dict], api_key: str, model: str = "gemini-2.5-flash") -> Dict[str, Any]:
+def synthesize_with_gemini(articles: List[Dict], api_key: str, model: str = "gemini-3.6-flash") -> Dict[str, Any]:
     """Call Google Gemini API via REST."""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     
@@ -73,17 +74,25 @@ def synthesize_with_gemini(articles: List[Dict], api_key: str, model: str = "gem
         }
     }
 
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(body).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
-
-    with urllib.request.urlopen(req, timeout=30) as response:
-        res_data = json.loads(response.read().decode("utf-8"))
-        candidate_text = res_data["candidates"][0]["content"]["parts"][0]["text"]
-        return json.loads(candidate_text)
+    import time
+    last_err = None
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(body).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=35) as response:
+                res_data = json.loads(response.read().decode("utf-8"))
+                candidate_text = res_data["candidates"][0]["content"]["parts"][0]["text"]
+                return json.loads(candidate_text)
+        except Exception as e:
+            last_err = e
+            logger.warning(f"Gemini attempt {attempt + 1} failed: {e}. Retrying in 2s...")
+            time.sleep(2)
+    raise last_err
 
 def synthesize_with_openai(articles: List[Dict], api_key: str) -> Dict[str, Any]:
     """Call OpenAI API via REST."""
@@ -168,7 +177,11 @@ def synthesize_fallback(articles: List[Dict]) -> Dict[str, Any]:
             "business_analogy": "Training is R&D / Capex to design a car; Inference is the ongoing Opex (fuel and maintenance) every time you drive it."
         },
         "quick_bites": [
-            f"{a['title']} — Reported by {a['source']}"
+            {
+                "text": a["title"],
+                "source_name": a["source"],
+                "source_url": a["link"]
+            }
             for a in articles[4:8]
         ]
     }
